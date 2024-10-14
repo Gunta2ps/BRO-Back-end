@@ -1,0 +1,134 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  username     String    @unique
+  firstName    String
+  lastName     String
+  email        String    @unique
+  password     String
+  phone        String    @unique @db.VarChar(10)
+  role         Role
+  profileImage String?
+  status       Status    @default(ACTIVE)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  store        Store?
+  order        Order[]
+  cart         Cart[]
+  booking      Booking[]
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
+}
+
+enum Role {
+  ADMIN
+  CUSTOMER
+  OWNER
+}
+
+model Store {
+  id           Int       @id @default(autoincrement())
+  name         String    @unique
+  address      String
+  profileImage String?
+  status       Status    @default(ACTIVE)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       Int       @unique
+  menu         Menu[]
+  booking      Booking[]
+}
+
+model Category {
+  id   Int    @id @default(autoincrement())
+  name String
+  menu Menu[]
+}
+
+model Menu {
+  id         Int         @id @default(autoincrement())
+  name       String
+  price      Decimal     @db.Decimal(10, 2)
+  image      String?
+  status     Status      @default(ACTIVE)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  category   Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId Int
+  store      Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  storeId    Int
+  orderItem  OrderItem[]
+  cart       Cart[]
+}
+
+model Order {
+  id         Int         @id @default(autoincrement())
+  status     OrderStatus
+  totalPrice Decimal     @db.Decimal(10, 2)
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     Int
+  orderItem  OrderItem[]
+}
+
+enum OrderStatus {
+  DONE
+  PAID
+  CANCEL
+  PENDING
+}
+
+model OrderItem {
+  id       Int   @id @default(autoincrement())
+  quantity Int
+  menu     Menu  @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  menuId   Int
+  order    Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId  Int
+}
+
+model Cart {
+  id       Int  @id @default(autoincrement())
+  quantity Int
+  menu     Menu @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  menuId   Int
+  user     User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId   Int
+}
+
+model Booking {
+  id      Int           @id @default(autoincrement())
+  status  BookingStatus
+  date    DateTime
+  time    String
+  price   Decimal       @db.Decimal(10, 2)
+  table   String
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId  Int
+  store   Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  storeId Int
+}
+
+enum BookingStatus {
+  DONE
+  CONFIRM
+  PENDING
+  CANCEL
+}
