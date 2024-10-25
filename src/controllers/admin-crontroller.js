@@ -221,3 +221,25 @@ exports.adminDeleteMenu = async (req,res,next) =>{
         next(error)
     }
 }
+
+exports.adminOrderList = async(req,res,next) =>{
+    try {
+        if(req.user.user.role !== 'ADMIN'){
+            return createError(400,"Not Admin")
+        }
+        const order = await prisma.order.findMany({
+            include:{
+                user:true,
+                orderItem:{
+                    include:{
+                        menu:true,
+                    }
+                },
+                store:true
+            }
+        })
+        res.json({order})
+    } catch (error) {
+        next(error)
+    }
+}

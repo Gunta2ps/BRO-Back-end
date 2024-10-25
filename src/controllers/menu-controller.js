@@ -1,5 +1,7 @@
 const createError = require('../utils/createError') 
 const {prisma} = require('../models') 
+const cloudinary = require("../config/cloudinary");
+const fs = require("fs/promises")
 
 exports.listMenu = async(req,res,next) =>{
 
@@ -26,6 +28,7 @@ exports.listMenu = async(req,res,next) =>{
                 category:{
                     select:{name:true,id:true,},
                 },
+                image:true,
             },
         })
         res.json({menu})
@@ -50,6 +53,7 @@ exports.showAllMenu = async(req,res,next) =>{
                 category:{
                     select:{name:true,id:true,},
                 },
+                image:true,
             }
         })
         res.json({menu})
@@ -60,7 +64,7 @@ exports.showAllMenu = async(req,res,next) =>{
 
 exports.addMenu = async(req,res,next) =>{
     try {
-        const {name,price,categoryId}= req.body
+        const {name,price,categoryId,image}= req.body
         if(req.user.user.role !== 'OWNER'){
             return createError(400,"Not Owner")
         }
@@ -76,7 +80,8 @@ exports.addMenu = async(req,res,next) =>{
                 name:name,
                 price:+price,
                 categoryId:+categoryId,
-                storeId:findStore.id
+                storeId:findStore.id,
+                image:image
             }
         })
 
@@ -88,7 +93,7 @@ exports.addMenu = async(req,res,next) =>{
 
 exports.editMenu = async(req,res,next) =>{
     try {
-        const {name,price,categoryId}= req.body
+        const {name,price,categoryId,image}= req.body
         if(req.user.user.role !== 'OWNER'){
             return createError(400,"Not Owner")
         }
@@ -107,6 +112,7 @@ exports.editMenu = async(req,res,next) =>{
                 name:name,
                 price:+price,
                 categoryId:+categoryId,
+                image:image
             }
         })
 
@@ -172,5 +178,17 @@ exports.deleteMenu = async(req,res,next) =>{
         res.json({message : "Delete menu success"})
     } catch (error) {
         next(error)
+    }
+}
+
+exports.previewPhoto = async(req,res,next) =>{
+    try {
+        const promiseUrl = await cloudinary.uploader.upload(req.file.path)
+        const photo = promiseUrl.secure_url
+        res.json({photo})
+    } catch (error) {
+        next(error)
+    }finally{
+        await fs.unlink(req.file.path)
     }
 }

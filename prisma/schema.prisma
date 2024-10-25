@@ -14,22 +14,20 @@ datasource db {
 }
 
 model User {
-  id           Int       @id @default(autoincrement())
-  username     String    @unique
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
   firstName    String
   lastName     String
-  email        String    @unique
+  email        String   @unique
   password     String
-  phone        String    @unique @db.VarChar(10)
+  phone        String   @unique @db.VarChar(10)
   role         Role
-  profileImage String?
-  status       Status    @default(ACTIVE)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  profileImage String?  @db.Text
+  status       Status   @default(ACTIVE)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
   store        Store?
   order        Order[]
-  cart         Cart[]
-  booking      Booking[]
 }
 
 enum Status {
@@ -43,18 +41,26 @@ enum Role {
   OWNER
 }
 
+model CategoryRestaurant {
+  id    Int     @id @default(autoincrement())
+  name  String
+  store Store[]
+}
+
 model Store {
-  id           Int       @id @default(autoincrement())
-  name         String    @unique
-  address      String
-  profileImage String?
-  status       Status    @default(ACTIVE)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId       Int       @unique
-  menu         Menu[]
-  booking      Booking[]
+  id                   Int                @id @default(autoincrement())
+  name                 String             @unique
+  address              String
+  profileImage         String?            @db.Text
+  status               Status             @default(ACTIVE)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId               Int                @unique
+  menu                 Menu[]
+  Order                Order[]
+  categoryrestaurant   CategoryRestaurant @relation(fields: [categoryRestaurantId], references: [id], onDelete: Cascade)
+  categoryRestaurantId Int
 }
 
 model Category {
@@ -67,7 +73,7 @@ model Menu {
   id         Int         @id @default(autoincrement())
   name       String
   price      Decimal     @db.Decimal(10, 2)
-  image      String?
+  image      String?     @db.Text
   status     Status      @default(ACTIVE)
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
@@ -76,23 +82,25 @@ model Menu {
   store      Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
   storeId    Int
   orderItem  OrderItem[]
-  cart       Cart[]
 }
 
 model Order {
   id         Int         @id @default(autoincrement())
-  status     OrderStatus
+  status     OrderStatus @default(PENDING)
+  date       DateTime    @default(now())
   totalPrice Decimal     @db.Decimal(10, 2)
   user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId     Int
+  store      Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  storeId    Int
   orderItem  OrderItem[]
 }
 
 enum OrderStatus {
   DONE
-  PAID
-  CANCEL
+  CONFIRM
   PENDING
+  CANCEL
 }
 
 model OrderItem {
@@ -102,33 +110,4 @@ model OrderItem {
   menuId   Int
   order    Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
   orderId  Int
-}
-
-model Cart {
-  id       Int  @id @default(autoincrement())
-  quantity Int
-  menu     Menu @relation(fields: [menuId], references: [id], onDelete: Cascade)
-  menuId   Int
-  user     User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId   Int
-}
-
-model Booking {
-  id      Int           @id @default(autoincrement())
-  status  BookingStatus
-  date    DateTime
-  time    String
-  price   Decimal       @db.Decimal(10, 2)
-  table   String
-  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId  Int
-  store   Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  storeId Int
-}
-
-enum BookingStatus {
-  DONE
-  CONFIRM
-  PENDING
-  CANCEL
 }

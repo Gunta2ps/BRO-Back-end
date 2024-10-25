@@ -1,5 +1,7 @@
 const createError = require('../utils/createError') 
 const {bcrypt,prisma,jwt} = require('../models') 
+const cloudinary = require("../config/cloudinary");
+const fs = require("fs/promises")
 
 exports.register = async (req, res, next) => {
     try {
@@ -41,7 +43,7 @@ exports.register = async (req, res, next) => {
                 phone: data.phone,
                 role:'OWNER'
             }})
-            const newStore = await prisma.store.create({data:{name:data.storeName, address:data.address, userId:newUser.id}})
+            const newStore = await prisma.store.create({data:{name:data.storeName, address:data.address, categoryRestaurantId: +data.categoryRestaurantId, userId:newUser.id}})
 
             res.status(201).json({message : 'Owner & Store created successfully'})
         }
@@ -79,6 +81,10 @@ exports.login = async (req, res, next) => {
             return createError(404, 'User not found')
         }
 
+        if(findUser.status === 'INACTIVE'){
+            return createError(404,'User not found')
+        }
+
         let isMatch = await bcrypt.compare(data.password, findUser.password)
         if(!isMatch){
             return createError(400, 'Wrong password')
@@ -91,6 +97,7 @@ exports.login = async (req, res, next) => {
                 email: findUser.email,
                 firstName:findUser.firstName,
                 lastName:findUser.lastName,
+                profileImage:findUser.profileImage,
             }
         }
 
@@ -119,7 +126,8 @@ exports.getUser = async (req, res, next) => {
                 role:true,
                 firstName:true,
                 lastName:true,
-                phone:true
+                phone:true,
+                profileImage:true,
             }
         })
         res.status(200).json({member})
@@ -172,4 +180,25 @@ exports.editProfile = async (req, res, next) => {
     } catch (error) {
         next(error)
     }
+}
+
+exports.editPhoto = async (req, res, next) => {
+    try {
+        const promiseUrl = await cloudinary.uploader.upload(req.file.path);
+        const photo = promiseUrl.secure_url
+        const user = await prisma.user.update({
+            where:{
+                id:req.user.user.userId
+            },
+            data:{
+                profileImage:photo
+            }
+        })
+        res.json({message : 'Edit photo success'})
+    } catch (error) {
+        next(error)
+    }    finally{
+        await fs.unlink(req.file.path)
+    }
+
 }

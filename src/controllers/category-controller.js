@@ -14,3 +14,17 @@ exports.listCategory = async (req,res,next) =>{
         next(error)
     }
 }
+exports.listCategoryRestaurant = async (req,res,next) =>{
+    try {
+        const category = await prisma.categoryRestaurant.findMany({
+            select:{
+                name:true,
+                id:true,
+            }
+        })
+        res.json(category)
+    } catch (error) {
+        next(error)
+    }
+}
+

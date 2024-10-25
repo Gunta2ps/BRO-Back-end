@@ -1,4 +1,4 @@
-const { listStoreAdmin, adminChangeStatusStore, adminDeleteStore, listUserAdmin, adminChangeStatusUser, adminDeleteUser, listMenuAdmin, adminChangeStatusMenu, adminDeleteMenu } = require('../controllers')
+const { listStoreAdmin, adminChangeStatusStore, adminDeleteStore, listUserAdmin, adminChangeStatusUser, adminDeleteUser, listMenuAdmin, adminChangeStatusMenu, adminDeleteMenu, adminOrderList } = require('../controllers')
 const { authenticate } = require('../middlewares')
 const {express} = require('../models')
 const router = express.Router()
@@ -14,5 +14,7 @@ router.delete('/user/:userId',authenticate,adminDeleteUser)
 router.get('/menu',authenticate,listMenuAdmin)
 router.patch('/menu/status',authenticate,adminChangeStatusMenu)
 router.delete('/menu/:menuId',authenticate,adminDeleteMenu)
+
+router.get('/order',authenticate,adminOrderList)
 
 module.exports = router

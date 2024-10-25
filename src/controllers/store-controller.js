@@ -1,5 +1,7 @@
 const createError = require('../utils/createError') 
 const {prisma} = require('../models') 
+const cloudinary = require("../config/cloudinary");
+const fs = require("fs/promises")
 
 exports.listStore = async (req, res, next) => {
     try {
@@ -10,7 +12,8 @@ exports.listStore = async (req, res, next) => {
             select:{
                 id:true,
                 name:true,
-                address:true
+                address:true,
+                profileImage:true,
             }
         })
         res.json(store)
@@ -32,6 +35,7 @@ exports.myStore = async (req, res, next) => {
             select:{
                 name:true,
                 address:true,
+                profileImage:true,
             },
         })
         res.json(store)
@@ -50,7 +54,8 @@ exports.showStore = async (req, res, next) => {
             },
             select:{
                 name:true,
-                address:true
+                address:true,
+                profileImage:true,
             }
         })
         res.json(store)
@@ -58,3 +63,41 @@ exports.showStore = async (req, res, next) => {
         next(error)
     }
 }
+
+exports.editPhotoStore = async (req, res, next) => {
+    try {
+        const promisUrl = await cloudinary.uploader.upload(req.file.path)
+        const photo = promisUrl.secure_url
+        const store = await prisma.store.update({
+            where:{
+                userId:req.user.user.userId
+            },
+            data:{
+                profileImage:photo
+            }
+        })
+        res.json({message : 'Edit photo success'})
+    } catch (error) {
+        next(error)
+    }finally{
+        await fs.unlink(req.file.path)
+    }
+}
+
+exports.searchStores = async (req,res,next) =>{
+    try {
+        const searchQuery = req.query.search?.toLowerCase()  || ''
+
+        const filterStores = await prisma.store.findMany({
+            where:{
+                name:{
+                    contains:searchQuery
+                }
+            }
+        })
+
+        res.json(filterStores)
+    } catch (error) {
+        next(error)
+    }
+} 
